@@ -11,7 +11,11 @@ Angular 2 module for authenticate to OAuth API backends.
 
 ## Configure
 
-```...
+
+```
+#!typescript
+
+...
 import { AuthModule } from './auth';
 
 @NgModule({
@@ -23,12 +27,18 @@ import { AuthModule } from './auth';
   ],
   ...
 })
-export class AppModule { }```
+export class AppModule { }
+```
+
 
 
 ## Usage
 
-```@Component({...});
+
+```
+#!typescript
+
+@Component({...});
 export class MyComponent {
   constructor(private auth: AuthService) { }
 
@@ -56,4 +66,5 @@ export class MyComponent {
     // Do a DELETE request using authentication headers
     this.auth.delete("myresource/1/").subscribe(() => console.log("deleted"));
   }
-}```
+}
+```
