@@ -1,0 +1,14 @@
+{
+    "version": "1.6.2",
+    "compilerOptions": {
+        "module": "commonjs",
+        "declaration": true,
+        "emitDecoratorMetadata": true,
+        "experimentalDecorators": true,
+        "outDir": "lib/",
+        "lib": ["es6", "dom"]
+    },
+    "files": [
+        "./src/index.ts"
+    ]
+}
