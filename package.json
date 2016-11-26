@@ -1,0 +1,17 @@
+{
+  "name": "angular2-oauth-client",
+  "version": "1.0.0",
+  "description": "angular 2 authentication module for oauth APIs",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@bitbucket.org/hub9/angular2-oauth-client.git"
+  },
+  "keywords": [
+    "angular2",
+    "oauth"
+  ],
+  "author": "hub9",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/hub9/angular2-oauth-client#readme"
+}
