@@ -6,6 +6,7 @@ export declare class AuthServiceConfig {
     apiId: string;
     apiSecret: string;
     apiUrl: string;
+    unauthorizedRoute: string;
 }
 export declare class AuthService {
     private config;
@@ -18,8 +19,10 @@ export declare class AuthService {
     login(username: string, password: string): Observable<any>;
     logout(): void;
     refresh_token(): Observable<any>;
-    get(url: any): string;
-    post(url: any, data: any): string;
-    put(url: any, data: any): string;
-    delete(url: any): string;
+    getToken(): Observable<any>;
+    request(method: string, url: string, data?: any, headers?: any): Observable<any>;
+    get(url: string): Observable<any>;
+    post(url: string, data: any): Observable<any>;
+    patch(url: string, data: any): Observable<any>;
+    delete(url: string): Observable<any>;
 }

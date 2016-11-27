@@ -1,6 +1,7 @@
 import {NgModule, ModuleWithProviders} from '@angular/core';
 import {HttpModule} from '@angular/http';
 import {AuthService, AuthServiceConfig} from './auth.service';
+import {AuthGuard} from './auth.guard';
 
 
 @NgModule({
@@ -8,15 +9,16 @@ import {AuthService, AuthServiceConfig} from './auth.service';
     HttpModule,
   ],
   providers: [
-    AuthService
+    AuthService,
+    AuthGuard
   ]
 })
 export class AuthModule {
-  static forRoot(apiId: string, apiSecret: string, apiUrl: string): ModuleWithProviders {
+  static forRoot(configData: any): ModuleWithProviders {
     return {
       ngModule: AuthModule,
       providers: [
-        {provide: AuthServiceConfig, useValue: {apiId, apiSecret, apiUrl}}
+        {provide: AuthServiceConfig, useValue: configData}
       ]
     };
   }

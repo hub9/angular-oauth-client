@@ -8,6 +8,7 @@ export class AuthServiceConfig {
   apiId: string;
   apiSecret: string;
   apiUrl: string;
+  unauthorizedRoute: string;
 }
 
 @Injectable()
@@ -80,17 +81,89 @@ export class AuthService {
       });
   }
 
-  // TODO: Authenticated http methods
-  get(url) {
-    return '';
+  getToken(): Observable<any> {
+    return Observable.create(observer => {
+      if (this.token != null) {
+        if (!this.authData.expiration || this.authData.expiration <= new Date().getTime() + 100000) {
+          this.refresh_token().subscribe(d => {
+            observer.next(this.token);
+            observer.complete();
+          });
+        } else {
+          observer.next(this.token);
+          observer.complete();
+        }
+      } else {
+        observer.next(null);
+        observer.complete();
+      }
+    });
   }
-  post(url, data) {
-    return '';
+
+  request(method: string, url: string, data: any = {}, headers: any = new Headers()): Observable<any> {
+    let formData: FormData = new FormData();
+    let hasFile = assignFormdata(formData, data);
+    if (!hasFile) {
+      data = JSON.stringify(data);
+    } else {
+      data = formData;
+    }
+
+    return Observable.create(obs => {
+      this.getToken().subscribe(d1 => {
+        headers.append('Authorization', 'Bearer ' + this.token);
+        headers.append('Content-Type', 'application/json');
+        let options = new RequestOptions({method: method, headers: headers, body: data});
+
+        this.http.request(this.config.apiUrl + 'api/' + url, options).subscribe(
+          d2 => {
+            if (d2.status === 204) {
+              obs.next(null);
+            } else {
+              obs.next(d2.json());
+            }
+          },
+          e => {
+            if (e.status === 401) {
+              this.logout();
+            }
+            obs.error(e);
+          },
+          () => obs.complete()
+        );
+      });
+    });
   }
-  put(url, data) {
-    return '';
+
+  get(url: string): Observable<any> {
+    return this.request('GET', url);
   }
-  delete(url) {
-    return '';
+
+  post(url: string, data: any): Observable<any> {
+    return this.request('POST', url, data);
   }
+
+  patch(url: string, data: any): Observable<any> {
+    return this.request('PATCH', url, data);
+  }
+
+  delete(url: string): Observable<any> {
+    return this.request('DELETE', url);
+  }
+}
+
+
+function assignFormdata(formdata: FormData, data: any) {
+  let hasFile = false;
+  for (let i in data) {
+    if (data[i] instanceof File) {
+      formdata.append(i, data[i]);
+      hasFile = true;
+    } else if (data[i] instanceof Object) {
+      formdata.append(i, JSON.stringify(data[i]));
+    } else {
+      formdata.append(i, data[i]);
+    }
+  }
+  return hasFile;
 }
