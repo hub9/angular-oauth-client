@@ -1,6 +1,4 @@
-import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/do';
+import * as Rx from 'rxjs/Rx';
 import { Http } from '@angular/http';
 export declare class AuthServiceConfig {
     apiId: string;
@@ -16,13 +14,13 @@ export declare class AuthService {
     me: any;
     private authData;
     constructor(config: AuthServiceConfig, http: Http);
-    login(username: string, password: string): Observable<any>;
+    login(username: string, password: string): Rx.Observable<any>;
     logout(): void;
-    refresh_token(): Observable<any>;
-    getToken(): Observable<any>;
-    request(method: string, url: string, data?: any, headers?: any): Observable<any>;
-    get(url: string): Observable<any>;
-    post(url: string, data: any): Observable<any>;
-    patch(url: string, data: any): Observable<any>;
-    delete(url: string): Observable<any>;
+    refresh_token(): Rx.Observable<any>;
+    getToken(): Rx.Observable<any>;
+    request(method: string, url: string, data?: any, headers?: any): Rx.Observable<any>;
+    get(url: string): Rx.Observable<any>;
+    post(url: string, data: any): Rx.Observable<any>;
+    patch(url: string, data: any): Rx.Observable<any>;
+    delete(url: string): Rx.Observable<any>;
 }

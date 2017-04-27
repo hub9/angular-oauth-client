@@ -8,6 +8,9 @@
         "outDir": "lib/",
         "lib": ["es6", "dom"]
     },
+    "angularCompilerOptions": {
+        "genDir": "compiled"
+    },
     "files": [
         "./src/index.ts"
     ]

@@ -1,12 +1,12 @@
-Angular2 OAuth Client
+Angular OAuth Client
 =========
 
-Angular 2 module for authenticate to OAuth API backends.
+Angular module for authenticate to OAuth API backends.
 
 
 ## Install
 
-```npm install --save git+ssh://git@bitbucket.org/hub9/angular2-oauth-client.git```
+```npm install --save git+https://bitbucket.org/hub9/angular-oauth-client.git```
 
 
 ## Configure
@@ -16,7 +16,7 @@ Angular 2 module for authenticate to OAuth API backends.
 #!typescript
 
 ...
-import { AuthModule } from './auth';
+import { AuthModule } from 'angular-oauth-client';
 
 @NgModule({
   ...
@@ -37,6 +37,8 @@ export class AppModule { }
 
 ```
 #!typescript
+
+import { AuthService } from 'angular-oauth-client';
 
 @Component({...});
 export class MyComponent {

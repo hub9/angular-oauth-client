@@ -1,6 +1,4 @@
-import { Observable } from 'rxjs/Observable';
-import 'rxjs/add/operator/map';
-import 'rxjs/add/operator/do';
+import * as Rx from 'rxjs/Rx';
 import { Injectable } from '@angular/core';
 import { Http, Headers, RequestOptions } from '@angular/http';
 
@@ -13,13 +11,13 @@ export class AuthServiceConfig {
 
 @Injectable()
 export class AuthService {
-  isAuthenticated: boolean = false;
+  isAuthenticated = false;
   token: string = null;
   me: any = {};
   private authData: any = {};
 
   constructor(private config: AuthServiceConfig, private http: Http) {
-    let t = window.localStorage.getItem('auth_data');
+    const t = window.localStorage.getItem('auth_data');
 
     if (t != null) {
       this.authData = JSON.parse(t);
@@ -31,11 +29,11 @@ export class AuthService {
     }
   }
 
-  login(username: string, password: string): Observable<any> {
-    let data = 'username=' + username + '&password=' + password + '&grant_type=password&client_id=' +
+  login(username: string, password: string): Rx.Observable<any> {
+    const data = 'username=' + username + '&password=' + password + '&grant_type=password&client_id=' +
       this.config.apiId + '&client_secret=' + this.config.apiSecret;
-    let headers = new Headers({'Content-Type': 'application/x-www-form-urlencoded'});
-    let options = new RequestOptions({headers: headers});
+    const headers = new Headers({'Content-Type': 'application/x-www-form-urlencoded'});
+    const options = new RequestOptions({headers: headers});
 
     let r = this.http.post(this.config.apiUrl + 'o/token/', data, options);
     return r.map(res => {
@@ -55,14 +53,14 @@ export class AuthService {
     window.localStorage.removeItem('auth_data');
   }
 
-  refresh_token(): Observable<any> {
-    let data = 'grant_type=refresh_token&client_id=' + this.config.apiId + '&client_secret=' +
+  refresh_token(): Rx.Observable<any> {
+    const data = 'grant_type=refresh_token&client_id=' + this.config.apiId + '&client_secret=' +
       this.config.apiSecret + '&refresh_token=' + this.authData.refresh_token;
-    let headers = new Headers({
+    const headers = new Headers({
       'Content-Type': 'application/x-www-form-urlencoded',
       'Authorization': 'Bearer ' + this.authData.refresh_token
     });
-    let options = new RequestOptions({headers: headers});
+    const options = new RequestOptions({headers: headers});
 
     return this.http.post(this.config.apiUrl + 'o/token/', data, options)
       .do(d => {
@@ -81,8 +79,8 @@ export class AuthService {
       });
   }
 
-  getToken(): Observable<any> {
-    return Observable.create(observer => {
+  getToken(): Rx.Observable<any> {
+    return Rx.Observable.create(observer => {
       if (this.token != null) {
         if (!this.authData.expiration || this.authData.expiration <= new Date().getTime() + 100000) {
           this.refresh_token().subscribe(d => {
@@ -100,7 +98,7 @@ export class AuthService {
     });
   }
 
-  request(method: string, url: string, data: any = {}, headers: any = new Headers()): Observable<any> {
+  request(method: string, url: string, data: any = {}, headers: any = new Headers()): Rx.Observable<any> {
     let formData: FormData = new FormData();
     let hasFile = assignFormdata(formData, data);
     if (!hasFile) {
@@ -109,7 +107,7 @@ export class AuthService {
       data = formData;
     }
 
-    return Observable.create(obs => {
+    return Rx.Observable.create(obs => {
       this.getToken().subscribe(d1 => {
         headers.append('Authorization', 'Bearer ' + this.token);
         headers.append('Content-Type', 'application/json');
@@ -135,19 +133,19 @@ export class AuthService {
     });
   }
 
-  get(url: string): Observable<any> {
+  get(url: string): Rx.Observable<any> {
     return this.request('GET', url);
   }
 
-  post(url: string, data: any): Observable<any> {
+  post(url: string, data: any): Rx.Observable<any> {
     return this.request('POST', url, data);
   }
 
-  patch(url: string, data: any): Observable<any> {
+  patch(url: string, data: any): Rx.Observable<any> {
     return this.request('PATCH', url, data);
   }
 
-  delete(url: string): Observable<any> {
+  delete(url: string): Rx.Observable<any> {
     return this.request('DELETE', url);
   }
 }
