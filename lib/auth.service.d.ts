@@ -4,6 +4,7 @@ export declare class AuthServiceConfig {
     apiId: string;
     apiSecret: string;
     apiUrl: string;
+    apiOauthUrl: string;
     unauthorizedRoute: string;
 }
 export declare class AuthService {

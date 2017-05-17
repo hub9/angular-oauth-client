@@ -3,6 +3,7 @@ export interface AuthServiceConfigType {
     apiId: number | string;
     apiSecret: number | string;
     apiUrl: string;
+    apiOauthUrl: string;
     unauthorizedRoute?: string;
 }
 export declare class AuthModule {

@@ -6,6 +6,7 @@ export class AuthServiceConfig {
   apiId: string;
   apiSecret: string;
   apiUrl: string;
+  apiOauthUrl: string;
   unauthorizedRoute: string;
 }
 
@@ -35,7 +36,7 @@ export class AuthService {
     const headers = new Headers({'Content-Type': 'application/x-www-form-urlencoded'});
     const options = new RequestOptions({headers: headers});
 
-    let r = this.http.post(this.config.apiUrl + 'o/token/', data, options);
+    let r = this.http.post(this.config.apiOauthUrl + 'token/', data, options);
     return r.map(res => {
       this.authData = res.json();
       this.token = this.authData.access_token;
@@ -62,7 +63,7 @@ export class AuthService {
     });
     const options = new RequestOptions({headers: headers});
 
-    return this.http.post(this.config.apiUrl + 'o/token/', data, options)
+    return this.http.post(this.config.apiOauthUrl + 'token/', data, options)
       .do(d => {
       }, e => {
         if (e.status === 401) {
@@ -113,7 +114,7 @@ export class AuthService {
         headers.append('Content-Type', 'application/json');
         let options = new RequestOptions({method: method, headers: headers, body: data});
 
-        this.http.request(this.config.apiUrl + 'api/' + url, options).subscribe(
+        this.http.request(this.config.apiUrl + url, options).subscribe(
           d2 => {
             if (d2.status === 204) {
               obs.next(null);

@@ -18,11 +18,19 @@ Angular module for authenticate to OAuth API backends.
 ...
 import { AuthModule } from 'angular-oauth-client';
 
+const apiConfig = {
+  apiId: '<Api_Id>',
+  apiSecret: '<Api_Secret>',
+  apiUrl: 'api/',
+  apiOauthUrl: 'oauth/',
+  unauthorizedRoute: '/login/',
+};
+
 @NgModule({
   ...
   imports: [
     ...
-    AuthModule.forRoot(myApiId, myApiSecret, myApiUrl),
+    AuthModule.forRoot(apiConfig),
     ...
   ],
   ...
@@ -69,4 +77,17 @@ export class MyComponent {
     this.auth.delete("myresource/1/").subscribe(() => console.log("deleted"));
   }
 }
+```
+
+
+## Contribute
+
+
+```
+#!bash
+
+git clone git@bitbucket.org:hub9/angular-oauth-client.git
+cd angular-oauth-client
+npm install
+npm run build
 ```
