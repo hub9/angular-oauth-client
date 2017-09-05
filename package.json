@@ -1,6 +1,6 @@
 {
   "name": "angular-oauth-client",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Angular authentication module for oauth APIs",
   "main": "lib/index.js",
   "typings": "lib/index",
@@ -19,17 +19,17 @@
     "build": "ngc"
   },
   "dependencies": {
-    "@angular/common": "^4.0.3",
-    "@angular/core": "^4.0.3",
-    "@angular/http": "^4.0.3",
-    "@angular/platform-browser": "^4.0.3",
-    "@angular/router": "^4.0.3",
-    "rxjs": "^5.3.0",
-    "zone.js": "^0.8.5"
+    "@angular/common": "^4.3.6",
+    "@angular/core": "^4.3.6",
+    "@angular/http": "^4.3.6",
+    "@angular/platform-browser": "^4.3.6",
+    "@angular/router": "^4.3.6",
+    "rxjs": "^5.4.1",
+    "zone.js": "^0.8.10"
   },
   "devDependencies": {
-    "@angular/compiler": "^4.0.3",
-    "@angular/compiler-cli": "^4.0.3",
-    "typescript": "^2.2.2"
+    "@angular/compiler": "^4.3.6",
+    "@angular/compiler-cli": "^4.3.6",
+    "typescript": "^2.3.4"
   }
 }

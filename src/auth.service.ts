@@ -111,7 +111,9 @@ export class AuthService {
     return Rx.Observable.create(obs => {
       this.getToken().subscribe(d1 => {
         headers.append('Authorization', 'Bearer ' + this.token);
-        headers.append('Content-Type', 'application/json');
+        if (!hasFile) {
+          headers.append('Content-Type', 'application/json');
+        }
         let options = new RequestOptions({method: method, headers: headers, body: data});
 
         this.http.request(this.config.apiUrl + url, options).subscribe(
