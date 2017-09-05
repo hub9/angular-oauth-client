@@ -121,7 +121,13 @@ export class AuthService {
             if (d2.status === 204) {
               obs.next(null);
             } else {
-              obs.next(d2.json());
+              let response;
+              try {
+                response = d2.json();
+              } catch (e) {
+                response = {};
+              }
+              obs.next(response);
             }
           },
           e => {
