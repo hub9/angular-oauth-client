@@ -1,6 +1,6 @@
 import * as Rx from 'rxjs/Rx';
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders, HttpRequest } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpRequest, HttpResponse } from '@angular/common/http';
 
 export class AuthServiceConfig {
   apiId: string;
@@ -59,7 +59,6 @@ export class AuthService {
     let headers = new HttpHeaders();
     headers = headers.set('Content-Type', 'application/x-www-form-urlencoded');
     headers = headers.set('Authorization', 'Bearer ' + this.authData.refresh_token);
-    console.log("kajshdkajshd teste");
     return this.http.post(this.config.apiOauthUrl + 'token/', data, {headers: headers})
       .do(d => {
       }, e => {
@@ -115,19 +114,14 @@ export class AuthService {
         let req =  new HttpRequest(method, this.config.apiUrl + url, options);
 
         this.http.request(req).subscribe(
-          d2 => {
-            console.log("request response", d2);
-            // if (d2.status === 204) {
-            //   obs.next(null);
-            // } else {
-            //   let response;
-            //   try {
-            //     response = d2.json();
-            //   } catch (e) {
-            //     response = {};
-            //   }
-            //   obs.next(response);
-            // }
+          (d2: any) => {
+            if (d2 instanceof HttpResponse) {
+              if (d2.status === 204) {
+                obs.next(null);
+              } else {
+                obs.next(d2.body);
+              }
+            }
           },
           e => {
             if (e.status === 401) {
