@@ -1,5 +1,5 @@
 import { NgModule, ModuleWithProviders } from '@angular/core';
-import { HttpModule } from '@angular/http';
+import { HttpClientModule } from '@angular/common/http';
 import { AuthService, AuthServiceConfig } from './auth.service';
 import { AuthGuard } from './auth.guard';
 
@@ -13,7 +13,7 @@ export interface AuthServiceConfigType {
 
 @NgModule({
   imports: [
-    HttpModule,
+    HttpClientModule,
   ],
   providers: [
     AuthGuard

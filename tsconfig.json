@@ -1,17 +1,30 @@
 {
-    "version": "1.6.2",
-    "compilerOptions": {
-        "module": "commonjs",
-        "declaration": true,
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "outDir": "lib/",
-        "lib": ["es6", "dom"]
-    },
-    "angularCompilerOptions": {
-        "genDir": "compiled"
-    },
-    "files": [
-        "./src/index.ts"
-    ]
+  "compilerOptions": {
+    "target": "es5",
+    "module": "es2015",
+    "moduleResolution": "node",
+    "sourceMap": false,
+    "declaration": true,
+    "removeComments": true,
+    "noImplicitAny": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "pretty": true,
+    "stripInternal": true,
+    "skipLibCheck": true,
+    "outDir": "lib/",
+    "rootDir": "./src"
+  },
+  "angularCompilerOptions": {
+    "genDir": "lib",
+    "debug": false,
+    "skipTemplateCodegen": true,
+    "skipMetadataEmit": false,
+    "strictMetadataEmit": true
+  },
+  "files": [
+    "./src/index.ts"
+  ]
 }

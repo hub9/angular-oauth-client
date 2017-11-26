@@ -1,5 +1,5 @@
 import * as Rx from 'rxjs/Rx';
-import { Http } from '@angular/http';
+import { HttpClient } from '@angular/common/http';
 export declare class AuthServiceConfig {
     apiId: string;
     apiSecret: string;
@@ -14,7 +14,7 @@ export declare class AuthService {
     token: string;
     me: any;
     private authData;
-    constructor(config: AuthServiceConfig, http: Http);
+    constructor(config: AuthServiceConfig, http: HttpClient);
     login(username: string, password: string): Rx.Observable<any>;
     logout(): void;
     refresh_token(): Rx.Observable<any>;

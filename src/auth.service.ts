@@ -1,6 +1,6 @@
 import * as Rx from 'rxjs/Rx';
 import { Injectable } from '@angular/core';
-import { Http, Headers, RequestOptions } from '@angular/http';
+import { HttpClient, HttpHeaders, HttpRequest } from '@angular/common/http';
 
 export class AuthServiceConfig {
   apiId: string;
@@ -17,7 +17,7 @@ export class AuthService {
   me: any = {};
   private authData: any = {};
 
-  constructor(private config: AuthServiceConfig, private http: Http) {
+  constructor(private config: AuthServiceConfig, private http: HttpClient) {
     const t = window.localStorage.getItem('auth_data');
 
     if (t != null) {
@@ -33,12 +33,11 @@ export class AuthService {
   login(username: string, password: string): Rx.Observable<any> {
     const data = 'username=' + username + '&password=' + password + '&grant_type=password&client_id=' +
       this.config.apiId + '&client_secret=' + this.config.apiSecret;
-    const headers = new Headers({'Content-Type': 'application/x-www-form-urlencoded'});
-    const options = new RequestOptions({headers: headers});
+    const headers = new HttpHeaders().set('Content-Type', 'application/x-www-form-urlencoded');
 
-    let r = this.http.post(this.config.apiOauthUrl + 'token/', data, options);
+    let r = this.http.post(this.config.apiOauthUrl + 'token/', data, {headers: headers});
     return r.map(res => {
-      this.authData = res.json();
+      this.authData = res;
       this.token = this.authData.access_token;
       this.isAuthenticated = true;
       this.authData.expiration = new Date().getTime() + (this.authData.expires_in * 1000);
@@ -57,13 +56,11 @@ export class AuthService {
   refresh_token(): Rx.Observable<any> {
     const data = 'grant_type=refresh_token&client_id=' + this.config.apiId + '&client_secret=' +
       this.config.apiSecret + '&refresh_token=' + this.authData.refresh_token;
-    const headers = new Headers({
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Authorization': 'Bearer ' + this.authData.refresh_token
-    });
-    const options = new RequestOptions({headers: headers});
-
-    return this.http.post(this.config.apiOauthUrl + 'token/', data, options)
+    const headers = new HttpHeaders();
+    headers.set('Content-Type', 'application/x-www-form-urlencoded');
+    headers.set('Authorization', 'Bearer ' + this.authData.refresh_token);
+    console.log("kajshdkajshd teste");
+    return this.http.post(this.config.apiOauthUrl + 'token/', data, {headers: headers})
       .do(d => {
       }, e => {
         if (e.status === 401) {
@@ -71,7 +68,7 @@ export class AuthService {
         }
       })
       .map(res => {
-        this.authData = res.json();
+        this.authData = res;
         this.token = this.authData.access_token;
         this.isAuthenticated = true;
         this.authData.expiration = new Date().getTime() + (this.authData.expires_in * 1000);
@@ -81,7 +78,7 @@ export class AuthService {
   }
 
   getToken(): Rx.Observable<any> {
-    return Rx.Observable.create(observer => {
+    return Rx.Observable.create((observer: any) => {
       if (this.token != null) {
         if (!this.authData.expiration || this.authData.expiration <= new Date().getTime() + 100000) {
           this.refresh_token().subscribe(d => {
@@ -99,7 +96,7 @@ export class AuthService {
     });
   }
 
-  request(method: string, url: string, data: any = {}, headers: any = new Headers()): Rx.Observable<any> {
+  request(method: string, url: string, data: any = {}, headers: any = new HttpHeaders()): Rx.Observable<any> {
     let formData: FormData = new FormData();
     let hasFile = assignFormdata(formData, data);
     if (!hasFile) {
@@ -108,27 +105,29 @@ export class AuthService {
       data = formData;
     }
 
-    return Rx.Observable.create(obs => {
+    return Rx.Observable.create((obs: any) => {
       this.getToken().subscribe(d1 => {
-        headers.append('Authorization', 'Bearer ' + this.token);
+        headers.set('Authorization', 'Bearer ' + this.token);
         if (!hasFile) {
-          headers.append('Content-Type', 'application/json');
+          headers.set('Content-Type', 'application/json');
         }
-        let options = new RequestOptions({method: method, headers: headers, body: data});
+        let options = {headers: headers, body: data};
+        let req =  new HttpRequest(method, this.config.apiUrl + url, options);
 
-        this.http.request(this.config.apiUrl + url, options).subscribe(
+        this.http.request(req).subscribe(
           d2 => {
-            if (d2.status === 204) {
-              obs.next(null);
-            } else {
-              let response;
-              try {
-                response = d2.json();
-              } catch (e) {
-                response = {};
-              }
-              obs.next(response);
-            }
+            console.log("request response", d2);
+            // if (d2.status === 204) {
+            //   obs.next(null);
+            // } else {
+            //   let response;
+            //   try {
+            //     response = d2.json();
+            //   } catch (e) {
+            //     response = {};
+            //   }
+            //   obs.next(response);
+            // }
           },
           e => {
             if (e.status === 401) {
