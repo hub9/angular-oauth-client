@@ -56,9 +56,9 @@ export class AuthService {
   refresh_token(): Rx.Observable<any> {
     const data = 'grant_type=refresh_token&client_id=' + this.config.apiId + '&client_secret=' +
       this.config.apiSecret + '&refresh_token=' + this.authData.refresh_token;
-    const headers = new HttpHeaders();
-    headers.set('Content-Type', 'application/x-www-form-urlencoded');
-    headers.set('Authorization', 'Bearer ' + this.authData.refresh_token);
+    let headers = new HttpHeaders();
+    headers = headers.set('Content-Type', 'application/x-www-form-urlencoded');
+    headers = headers.set('Authorization', 'Bearer ' + this.authData.refresh_token);
     console.log("kajshdkajshd teste");
     return this.http.post(this.config.apiOauthUrl + 'token/', data, {headers: headers})
       .do(d => {
@@ -107,9 +107,9 @@ export class AuthService {
 
     return Rx.Observable.create((obs: any) => {
       this.getToken().subscribe(d1 => {
-        headers.set('Authorization', 'Bearer ' + this.token);
+        headers = headers.set('Authorization', 'Bearer ' + this.token);
         if (!hasFile) {
-          headers.set('Content-Type', 'application/json');
+          headers = headers.set('Content-Type', 'application/json');
         }
         let options = {headers: headers, body: data};
         let req =  new HttpRequest(method, this.config.apiUrl + url, options);
