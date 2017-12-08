@@ -10,11 +10,12 @@ export declare class AuthServiceConfig {
 export declare class AuthService {
     private config;
     private http;
+    private platformId;
     isAuthenticated: boolean;
     token: string;
     me: any;
     private authData;
-    constructor(config: AuthServiceConfig, http: HttpClient);
+    constructor(config: AuthServiceConfig, http: HttpClient, platformId: Object);
     login(username: string, password: string): Rx.Observable<any>;
     logout(): void;
     refresh_token(): Rx.Observable<any>;

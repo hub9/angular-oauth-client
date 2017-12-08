@@ -1,6 +1,8 @@
 import * as Rx from 'rxjs/Rx';
-import { Injectable } from '@angular/core';
+import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
 import { HttpClient, HttpHeaders, HttpRequest, HttpResponse } from '@angular/common/http';
+
 
 export class AuthServiceConfig {
   apiId: string;
@@ -17,7 +19,12 @@ export class AuthService {
   me: any = {};
   private authData: any = {};
 
-  constructor(private config: AuthServiceConfig, private http: HttpClient) {
+  constructor(private config: AuthServiceConfig, private http: HttpClient,
+              @Inject(PLATFORM_ID) private platformId: Object) {
+    if (isPlatformServer(this.platformId)) {
+      return;
+    }
+
     const t = window.localStorage.getItem('auth_data');
 
     if (t != null) {
