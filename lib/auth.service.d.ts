@@ -15,6 +15,7 @@ export declare class AuthService {
     token: string;
     me: any;
     private authData;
+    authenticatedChanged: Rx.Subject<any>;
     constructor(config: AuthServiceConfig, http: HttpClient, platformId: Object);
     login(username: string, password: string): Rx.Observable<any>;
     logout(): void;

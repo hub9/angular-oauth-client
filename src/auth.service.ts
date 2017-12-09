@@ -18,6 +18,7 @@ export class AuthService {
   token: string = null;
   me: any = {};
   private authData: any = {};
+  authenticatedChanged: Rx.Subject<any> = new Rx.Subject();
 
   constructor(private config: AuthServiceConfig, private http: HttpClient,
               @Inject(PLATFORM_ID) private platformId: Object) {
@@ -31,6 +32,7 @@ export class AuthService {
       this.authData = JSON.parse(t);
       this.token = this.authData.access_token;
       this.isAuthenticated = true;
+      this.authenticatedChanged.next(true);
       if (this.authData.expiration <= new Date().getTime() + 100000) {
         this.refresh_token().subscribe();
       }
@@ -47,6 +49,7 @@ export class AuthService {
       this.authData = res;
       this.token = this.authData.access_token;
       this.isAuthenticated = true;
+      this.authenticatedChanged.next(true);
       this.authData.expiration = new Date().getTime() + (this.authData.expires_in * 1000);
       window.localStorage.setItem('auth_data', JSON.stringify(this.authData));
       return this.authData;
@@ -56,6 +59,7 @@ export class AuthService {
   logout(): void {
     this.token = null;
     this.isAuthenticated = false;
+    this.authenticatedChanged.next(false);
     this.authData = {};
     window.localStorage.removeItem('auth_data');
   }
@@ -77,6 +81,7 @@ export class AuthService {
         this.authData = res;
         this.token = this.authData.access_token;
         this.isAuthenticated = true;
+        this.authenticatedChanged.next(true);
         this.authData.expiration = new Date().getTime() + (this.authData.expires_in * 1000);
         window.localStorage.setItem('auth_data', JSON.stringify(this.authData));
         return this.authData;
