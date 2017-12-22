@@ -61,7 +61,9 @@ export class AuthService {
     this.isAuthenticated = false;
     this.authenticatedChanged.next(false);
     this.authData = {};
-    window.localStorage.removeItem('auth_data');
+    if (!isPlatformServer(this.platformId)) {
+      window.localStorage.removeItem('auth_data');
+    }
   }
 
   refresh_token(): Rx.Observable<any> {
@@ -108,12 +110,17 @@ export class AuthService {
   }
 
   request(method: string, url: string, data: any = {}, headers: any = new HttpHeaders()): Rx.Observable<any> {
-    let formData: FormData = new FormData();
-    let hasFile = assignFormdata(formData, data);
-    if (!hasFile) {
-      data = JSON.stringify(data);
+    let hasFile = false;
+    if (!isPlatformServer(this.platformId)) {
+      let formData: FormData = new FormData();
+      hasFile = assignFormdata(formData, data);
+      if (!hasFile) {
+        data = JSON.stringify(data);
+      } else {
+        data = formData;
+      }
     } else {
-      data = formData;
+      data = JSON.stringify(data);
     }
 
     return Rx.Observable.create((obs: any) => {
