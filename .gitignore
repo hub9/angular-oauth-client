@@ -1,3 +1,25 @@
-compiled/
-.idea/
-node_modules/
+# dependencies
+/node_modules/
+
+# compiled output
+/lib/
+
+# IDEs and editors
+/.idea/
+/.project
+/.classpath
+/.c9/
+/.settings/
+/*.launch
+/*.sublime-workspace
+
+# IDE - VSCode
+/.vscode/*
+!/.vscode/settings.json
+!/.vscode/tasks.json
+!/.vscode/launch.json
+!/.vscode/extensions.json
+
+# misc
+/npm-debug.log
+/typings

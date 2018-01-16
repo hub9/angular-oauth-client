@@ -1,188 +1,275 @@
-import * as Rx from 'rxjs/Rx';
-import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
-import { isPlatformServer } from '@angular/common';
-import { HttpClient, HttpHeaders, HttpRequest, HttpResponse } from '@angular/common/http';
+import { isPlatformServer } from '@angular/common'
+import { HttpClient, HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http'
+import { Inject, Injectable, PLATFORM_ID } from '@angular/core'
+import 'rxjs/add/observable/of'
+import 'rxjs/add/operator/catch'
+import 'rxjs/add/operator/delay'
+import 'rxjs/add/operator/do'
+import 'rxjs/add/operator/map'
+import { BehaviorSubject } from 'rxjs/BehaviorSubject'
+import { Observable } from 'rxjs/Observable'
+import { AuthServiceConfig } from './auth.service.config'
 
+export interface IRequestData {
+  [key: string]: string | File | Blob | any[] | {}
+}
 
-export class AuthServiceConfig {
-  apiId: string;
-  apiSecret: string;
-  apiUrl: string;
-  apiOauthUrl: string;
-  unauthorizedRoute: string;
+export interface IAuthDataResponse {
+  access_token: string,
+  refresh_token: string,
+  expires_in: number, // Seconds from request time
+}
+
+export interface IAuthData extends IAuthDataResponse {
+  expiration: number, // Timestamp in ms
 }
 
 @Injectable()
 export class AuthService {
-  isAuthenticated = false;
-  token: string = null;
-  me: any = {};
-  private authData: any = {};
-  authenticatedChanged: Rx.Subject<any> = new Rx.Subject();
+  static localStorageKey = 'auth_data'
+  static refreshThreshold = 300
+  static emptyAuthData: IAuthData = {
+    access_token: null,
+    refresh_token: null,
+    expires_in: 0,
+    expiration: 0,
+  }
 
-  constructor(private config: AuthServiceConfig, private http: HttpClient,
-              @Inject(PLATFORM_ID) private platformId: Object) {
+  private authUrl = `${this.config.apiOauthUrl}/token/`
+  public readonly authData$ = new BehaviorSubject<IAuthData>(AuthService.emptyAuthData)
+
+  constructor(
+    private config: AuthServiceConfig,
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) private platformId: string,
+  ) {
     if (isPlatformServer(this.platformId)) {
-      return;
+      return
     }
 
-    const t = window.localStorage.getItem('auth_data');
+    this.storageLoad()
+    this.refreshCheck()
+  }
 
-    if (t != null) {
-      this.authData = JSON.parse(t);
-      this.token = this.authData.access_token;
-      this.isAuthenticated = true;
-      this.authenticatedChanged.next(true);
-      if (this.authData.expiration <= new Date().getTime() + 100000) {
-        this.refresh_token().subscribe();
+  /** Retrieve credentials from localStorage */
+  private storageLoad(): IAuthData {
+    let authData = AuthService.emptyAuthData
+    try {
+      const authDataStr = localStorage.getItem(AuthService.localStorageKey)
+      if (authDataStr) {
+        authData = JSON.parse(authDataStr)
+        return
       }
+    } catch (ignored) {} // LocalStorage not available
+
+    this.authData$.next(authData)
+
+    return authData
+  }
+
+  /** Store credentials in localStorage */
+  private storageSave() {
+    if (isPlatformServer(this.platformId)) {
+      return
     }
+
+    const authData = this.authData$.getValue()
+
+    try {
+      localStorage.setItem(AuthService.localStorageKey, JSON.stringify(authData))
+    } catch (ignored) {}
   }
 
-  login(username: string, password: string): Rx.Observable<any> {
-    const data = 'username=' + username + '&password=' + password + '&grant_type=password&client_id=' +
-      this.config.apiId + '&client_secret=' + this.config.apiSecret;
-    const headers = new HttpHeaders().set('Content-Type', 'application/x-www-form-urlencoded');
-
-    let r = this.http.post(this.config.apiOauthUrl + 'token/', data, {headers: headers});
-    return r.map(res => {
-      this.authData = res;
-      this.token = this.authData.access_token;
-      this.isAuthenticated = true;
-      this.authenticatedChanged.next(true);
-      this.authData.expiration = new Date().getTime() + (this.authData.expires_in * 1000);
-      window.localStorage.setItem('auth_data', JSON.stringify(this.authData));
-      return this.authData;
-    });
-  }
-
-  logout(): void {
-    this.token = null;
-    this.isAuthenticated = false;
-    this.authenticatedChanged.next(false);
-    this.authData = {};
-    if (!isPlatformServer(this.platformId)) {
-      window.localStorage.removeItem('auth_data');
+  /** Clear stored credentials in localStorage */
+  private storageClear() {
+    if (isPlatformServer(this.platformId)) {
+      return
     }
+
+    try {
+      localStorage.removeItem(AuthService.localStorageKey)
+    } catch (ignored) {}
   }
 
-  refresh_token(): Rx.Observable<any> {
-    const data = 'grant_type=refresh_token&client_id=' + this.config.apiId + '&client_secret=' +
-      this.config.apiSecret + '&refresh_token=' + this.authData.refresh_token;
-    let headers = new HttpHeaders();
-    headers = headers.set('Content-Type', 'application/x-www-form-urlencoded');
-    headers = headers.set('Authorization', 'Bearer ' + this.authData.refresh_token);
-    return this.http.post(this.config.apiOauthUrl + 'token/', data, {headers: headers})
-      .do(d => {
-      }, e => {
-        if (e.status === 401) {
-          this.logout();
+  /**
+   * Check if token is expired.
+   * If expired and there's a valid refresh token, it automatically requests a new one.
+   * If not expired it start a timer to automatically refresh when expiration time is close.
+   *
+   * @return {boolean} true if valid, false if expired
+   */
+  private refreshCheck(): boolean {
+    const authData = this.authData$.getValue()
+
+    if (!authData.expiration || !authData.refresh_token) {
+      return false
+    }
+
+    const now = Date.now()
+
+    if (authData.expiration <= now + AuthService.refreshThreshold) {
+      this.refresh().subscribe()
+      return false
+    }
+
+    const expiresIn = authData.expiration - now
+    const refreshTimeout = expiresIn - AuthService.refreshThreshold
+
+    this.authData$.delay(refreshTimeout).do(() => {
+      this.refresh().subscribe()
+    }).subscribe()
+    return true
+  }
+
+  public isAuthenticated() {
+    const authData = this.authData$.getValue()
+    return authData.access_token != null
+  }
+
+  /**
+   * Map function used to receive auth data:
+   * 1) Convert IAuthDataResponse to IAuthData
+   * 2) Update current credentials
+   * 3) Store in localStorage
+   * 4) Start a timer to automatically request for a refresh
+   */
+  private authRequestDataMap(response: IAuthDataResponse): IAuthData {
+    const authData: IAuthData = {
+      ...response,
+      expiration: Date.now() + (response.expires_in * 1000),
+    }
+
+    this.authData$.next(authData)
+    this.storageSave()
+    this.refreshCheck()
+
+    return authData
+  }
+
+  /** Create an observable that performs the login procedure */
+  public login(username: string, password: string): Observable<IAuthData> {
+    const data = `grant_type=password&username=${username}&password=${password}&` +
+      `client_id=${this.config.apiId}&client_secret=${this.config.apiSecret}`
+    const headers = new HttpHeaders().set('Content-Type', 'application/x-www-form-urlencoded')
+
+    return this.http.post<IAuthDataResponse>(this.authUrl, data, { headers })
+      .map(this.authRequestDataMap)
+  }
+
+  /** Create an observable that performs the refresh token procedure */
+  private refresh(): Observable<IAuthData> {
+    const authData = this.authData$.getValue()
+
+    if (!authData.refresh_token) {
+      return Observable.of(AuthService.emptyAuthData)
+    }
+
+    const data = `grant_type=refresh_token&refresh_token=${authData.refresh_token}&` +
+      `client_id=${this.config.apiId}&client_secret=${this.config.apiSecret}`
+
+    const headers = new HttpHeaders()
+    headers.set('Content-Type', 'application/x-www-form-urlencoded')
+    headers.set('Authorization', `Bearer ${authData.refresh_token}`)
+
+    return this.http.post<IAuthDataResponse>(this.authUrl, data, { headers })
+      .map(this.authRequestDataMap)
+      .catch((error: HttpErrorResponse): Observable<IAuthData> => {
+        if (error.status === 401) {
+          this.logout()
         }
+        throw error
       })
-      .map(res => {
-        this.authData = res;
-        this.token = this.authData.access_token;
-        this.isAuthenticated = true;
-        this.authenticatedChanged.next(true);
-        this.authData.expiration = new Date().getTime() + (this.authData.expires_in * 1000);
-        window.localStorage.setItem('auth_data', JSON.stringify(this.authData));
-        return this.authData;
-      });
   }
 
-  getToken(): Rx.Observable<any> {
-    return Rx.Observable.create((observer: any) => {
-      if (this.token != null) {
-        if (!this.authData.expiration || this.authData.expiration <= new Date().getTime() + 100000) {
-          this.refresh_token().subscribe(d => {
-            observer.next(this.token);
-            observer.complete();
-          });
-        } else {
-          observer.next(this.token);
-          observer.complete();
-        }
-      } else {
-        observer.next(null);
-        observer.complete();
-      }
-    });
+  /** Purge all credentials in use and stored */
+  public logout() {
+    this.authData$.next(AuthService.emptyAuthData)
+    this.storageClear()
   }
 
-  request(method: string, url: string, data: any = {}, headers: any = new HttpHeaders()): Rx.Observable<any> {
-    let hasFile = false;
-    if (!isPlatformServer(this.platformId)) {
-      let formData: FormData = new FormData();
-      hasFile = assignFormdata(formData, data);
-      if (!hasFile) {
-        data = JSON.stringify(data);
-      } else {
-        data = formData;
-      }
-    } else {
-      data = JSON.stringify(data);
+  /** Pack structured request data to be used as request body */
+  private packRequestData(data: IRequestData, headers: HttpHeaders) {
+    if (!data) {
+      return undefined
     }
 
-    return Rx.Observable.create((obs: any) => {
-      this.getToken().subscribe(d1 => {
-        headers = headers.set('Authorization', 'Bearer ' + this.token);
-        if (!hasFile) {
-          headers = headers.set('Content-Type', 'application/json');
-        }
-        let options = {headers: headers, body: data};
-        let req =  new HttpRequest(method, this.config.apiUrl + url, options);
-
-        this.http.request(req).subscribe(
-          (d2: any) => {
-            if (d2 instanceof HttpResponse) {
-              if (d2.status === 204) {
-                obs.next(null);
-              } else {
-                obs.next(d2.body);
-              }
-            }
-          },
-          e => {
-            if (e.status === 401) {
-              this.logout();
-            }
-            obs.error(e);
-          },
-          () => obs.complete()
-        );
-      });
-    });
-  }
-
-  get(url: string): Rx.Observable<any> {
-    return this.request('GET', url);
-  }
-
-  post(url: string, data: any): Rx.Observable<any> {
-    return this.request('POST', url, data);
-  }
-
-  patch(url: string, data: any): Rx.Observable<any> {
-    return this.request('PATCH', url, data);
-  }
-
-  delete(url: string): Rx.Observable<any> {
-    return this.request('DELETE', url);
-  }
-}
-
-
-function assignFormdata(formdata: FormData, data: any) {
-  let hasFile = false;
-  for (let i in data) {
-    if (data[i] instanceof File) {
-      formdata.append(i, data[i]);
-      hasFile = true;
-    } else if (data[i] instanceof Object) {
-      formdata.append(i, JSON.stringify(data[i]));
-    } else {
-      formdata.append(i, data[i]);
+    if (isPlatformServer(this.platformId)) {
+      return data
     }
+
+    let hasFile = false
+    const formData = new FormData()
+
+    for (const key of Object.keys(data)) {
+      const value = data[key]
+
+      if (value instanceof File) {
+        formData.append(key, value)
+        hasFile = true
+      } else if (value instanceof Object) {
+        // Object or Array
+        formData.append(key, JSON.stringify(value))
+      } else {
+        formData.append(key, value)
+      }
+    }
+
+    if (!hasFile) {
+      headers.set('Content-Type', 'application/json')
+      return JSON.stringify(data)
+    }
+
+    return formData
   }
-  return hasFile;
+
+  /** Create an observable that makes HTTP requests */
+  public request<T>(
+    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+    url: string,
+    data: IRequestData = {},
+    headers: HttpHeaders = new HttpHeaders(),
+  ): Observable<T> {
+    const authData = this.authData$.getValue()
+
+    if (authData.access_token) {
+      headers.set('Authorization', `Bearer ${authData.access_token}`)
+    }
+
+    const body = this.packRequestData(data, headers)
+    const requestUrl = this.config.apiUrl + url
+
+    return this.http.request(method, requestUrl, { headers, body })
+      .map((response: HttpResponse<T>) => (response.status === 204 ? null : response.body))
+      .catch((error: HttpErrorResponse): Observable<T> => {
+        if (error.status === 401) {
+          this.logout()
+        }
+        throw error
+      })
+  }
+
+  /** Create an observable that makes HTTP GET requests */
+  public get<T>(url: string): Observable<T> {
+    return this.request<T>('GET', url)
+  }
+
+  /** Create an observable that makes HTTP POST requests */
+  public post<T>(url: string, data: IRequestData): Observable<T> {
+    return this.request<T>('POST', url, data)
+  }
+
+  /** Create an observable that makes HTTP PATCH requests */
+  public patch<T>(url: string, data: IRequestData): Observable<T> {
+    return this.request<T>('PATCH', url, data)
+  }
+
+  /** Create an observable that makes HTTP PATCH requests */
+  public put<T>(url: string, data: IRequestData): Observable<T> {
+    return this.request<T>('PUT', url, data)
+  }
+
+  /** Create an observable that makes HTTP DELETE requests */
+  public delete<T>(url: string): Observable<T> {
+    return this.request<T>('DELETE', url)
+  }
 }

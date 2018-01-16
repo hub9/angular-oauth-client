@@ -1,0 +1,17 @@
+# dependencies
+/node_modules/
+
+# sources
+/src/
+
+# IDEs and editors
+/.editorconfig
+/.idea
+/.project
+/.classpath
+/.c9/
+/.settings/
+/.vscode/
+/*.launch
+/*.sublime-workspace
+/tslint.json

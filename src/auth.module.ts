@@ -1,32 +1,21 @@
-import { NgModule, ModuleWithProviders } from '@angular/core';
-import { HttpClientModule } from '@angular/common/http';
-import { AuthService, AuthServiceConfig } from './auth.service';
-import { AuthGuard } from './auth.guard';
-
-export interface AuthServiceConfigType {
-  apiId: number | string;
-  apiSecret: number | string;
-  apiUrl: string;
-  apiOauthUrl: string;
-  unauthorizedRoute?: string;
-}
+import { HttpClientModule } from '@angular/common/http'
+import { ModuleWithProviders, NgModule } from '@angular/core'
+import { AuthGuard } from './auth.guard'
+import { AuthService } from './auth.service'
+import { AuthServiceConfig } from './auth.service.config'
 
 @NgModule({
-  imports: [
-    HttpClientModule,
-  ],
-  providers: [
-    AuthGuard
-  ]
+  imports: [HttpClientModule],
+  providers: [AuthGuard],
 })
 export class AuthModule {
-  static forRoot(configData: AuthServiceConfigType): ModuleWithProviders {
+  static forRoot(configData: AuthServiceConfig): ModuleWithProviders {
     return {
       ngModule: AuthModule,
       providers: [
-        {provide: AuthServiceConfig, useValue: configData},
-        AuthService
-      ]
-    };
+        { provide: AuthServiceConfig, useValue: configData },
+        AuthService,
+      ],
+    }
   }
 }

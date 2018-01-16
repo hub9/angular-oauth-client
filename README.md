@@ -54,7 +54,7 @@ export class MyComponent {
 
   login(username, password) {
     this.auth.login(username, password).subscribe(response => {
-      console.log("Auth data = ", response);
+      console.log("Auth data:", response);
     });
   }
 
