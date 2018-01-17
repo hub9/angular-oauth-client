@@ -1,4 +1,4 @@
-import { isPlatformServer } from '@angular/common'
+import { isPlatformServer, Location } from '@angular/common'
 import { HttpClient, HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http'
 import { Inject, Injectable, PLATFORM_ID } from '@angular/core'
 import 'rxjs/add/observable/of'
@@ -10,17 +10,16 @@ import { BehaviorSubject } from 'rxjs/BehaviorSubject'
 import { Observable } from 'rxjs/Observable'
 import { AuthServiceConfig } from './auth.service.config'
 
-export interface IRequestData {
-  [key: string]: string | File | Blob | any[] | {}
-}
+export type RequestMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+export type RequestBody = { [key: string]: string | File | Blob | any[] | object }
 
-export interface IAuthDataResponse {
+export interface AuthDataResponse {
   access_token: string,
   refresh_token: string,
   expires_in: number, // Seconds from request time
 }
 
-export interface IAuthData extends IAuthDataResponse {
+export interface AuthData extends AuthDataResponse {
   expiration: number, // Timestamp in ms
 }
 
@@ -28,15 +27,15 @@ export interface IAuthData extends IAuthDataResponse {
 export class AuthService {
   static localStorageKey = 'auth_data'
   static refreshThreshold = 300
-  static emptyAuthData: IAuthData = {
+  static emptyAuthData: AuthData = {
     access_token: null,
     refresh_token: null,
     expires_in: 0,
     expiration: 0,
   }
 
-  private authUrl = `${this.config.apiOauthUrl}/token/`
-  public readonly authData$ = new BehaviorSubject<IAuthData>(AuthService.emptyAuthData)
+  private authUrl = Location.joinWithSlash(this.config.apiOauthUrl, '/token/')
+  public readonly authData$ = new BehaviorSubject<AuthData>(AuthService.emptyAuthData)
 
   constructor(
     private config: AuthServiceConfig,
@@ -52,7 +51,7 @@ export class AuthService {
   }
 
   /** Retrieve credentials from localStorage */
-  private storageLoad(): IAuthData {
+  private storageLoad(): AuthData {
     let authData = AuthService.emptyAuthData
     try {
       const authDataStr = localStorage.getItem(AuthService.localStorageKey)
@@ -128,13 +127,13 @@ export class AuthService {
 
   /**
    * Map function used to receive auth data:
-   * 1) Convert IAuthDataResponse to IAuthData
+   * 1) Convert AuthDataResponse to AuthData
    * 2) Update current credentials
    * 3) Store in localStorage
    * 4) Start a timer to automatically request for a refresh
    */
-  private authRequestDataMap(response: IAuthDataResponse): IAuthData {
-    const authData: IAuthData = {
+  private authRequestDataMap(response: AuthDataResponse): AuthData {
+    const authData: AuthData = {
       ...response,
       expiration: Date.now() + (response.expires_in * 1000),
     }
@@ -147,17 +146,18 @@ export class AuthService {
   }
 
   /** Create an observable that performs the login procedure */
-  public login(username: string, password: string): Observable<IAuthData> {
+  public login(username: string, password: string): Observable<AuthData> {
     const data = `grant_type=password&username=${username}&password=${password}&` +
       `client_id=${this.config.apiId}&client_secret=${this.config.apiSecret}`
+
     const headers = new HttpHeaders().set('Content-Type', 'application/x-www-form-urlencoded')
 
-    return this.http.post<IAuthDataResponse>(this.authUrl, data, { headers })
+    return this.http.post<AuthDataResponse>(this.authUrl, data, { headers })
       .map(this.authRequestDataMap)
   }
 
   /** Create an observable that performs the refresh token procedure */
-  private refresh(): Observable<IAuthData> {
+  private refresh(): Observable<AuthData> {
     const authData = this.authData$.getValue()
 
     if (!authData.refresh_token) {
@@ -171,9 +171,9 @@ export class AuthService {
     headers.set('Content-Type', 'application/x-www-form-urlencoded')
     headers.set('Authorization', `Bearer ${authData.refresh_token}`)
 
-    return this.http.post<IAuthDataResponse>(this.authUrl, data, { headers })
+    return this.http.post<AuthDataResponse>(this.authUrl, data, { headers })
       .map(this.authRequestDataMap)
-      .catch((error: HttpErrorResponse): Observable<IAuthData> => {
+      .catch((error: HttpErrorResponse): Observable<AuthData> => {
         if (error.status === 401) {
           this.logout()
         }
@@ -188,7 +188,7 @@ export class AuthService {
   }
 
   /** Pack structured request data to be used as request body */
-  private packRequestData(data: IRequestData, headers: HttpHeaders) {
+  private packRequestData(data: RequestBody, headers: HttpHeaders) {
     if (!data) {
       return undefined
     }
@@ -224,9 +224,9 @@ export class AuthService {
 
   /** Create an observable that makes HTTP requests */
   public request<T>(
-    method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE',
+    method: RequestMethod,
     url: string,
-    data: IRequestData = {},
+    data: RequestBody = {},
     headers: HttpHeaders = new HttpHeaders(),
   ): Observable<T> {
     const authData = this.authData$.getValue()
@@ -236,7 +236,9 @@ export class AuthService {
     }
 
     const body = this.packRequestData(data, headers)
-    const requestUrl = this.config.apiUrl + url
+    const requestUrl = Location.joinWithSlash(this.config.apiUrl, url)
+
+    console.log('authUrl:', this.authUrl, '\nrequestUrl:', requestUrl)
 
     return this.http.request(method, requestUrl, { headers, body })
       .map((response: HttpResponse<T>) => (response.status === 204 ? null : response.body))
@@ -254,17 +256,17 @@ export class AuthService {
   }
 
   /** Create an observable that makes HTTP POST requests */
-  public post<T>(url: string, data: IRequestData): Observable<T> {
+  public post<T>(url: string, data: RequestBody): Observable<T> {
     return this.request<T>('POST', url, data)
   }
 
   /** Create an observable that makes HTTP PATCH requests */
-  public patch<T>(url: string, data: IRequestData): Observable<T> {
+  public patch<T>(url: string, data: RequestBody): Observable<T> {
     return this.request<T>('PATCH', url, data)
   }
 
   /** Create an observable that makes HTTP PATCH requests */
-  public put<T>(url: string, data: IRequestData): Observable<T> {
+  public put<T>(url: string, data: RequestBody): Observable<T> {
     return this.request<T>('PUT', url, data)
   }
 
