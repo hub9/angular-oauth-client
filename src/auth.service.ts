@@ -238,8 +238,6 @@ export class AuthService {
     const body = this.packRequestData(data, headers)
     const requestUrl = Location.joinWithSlash(this.config.apiUrl, url)
 
-    console.log('authUrl:', this.authUrl, '\nrequestUrl:', requestUrl)
-
     return this.http.request(method, requestUrl, { headers, body })
       .map((response: HttpResponse<T>) => (response.status === 204 ? null : response.body))
       .catch((error: HttpErrorResponse): Observable<T> => {
