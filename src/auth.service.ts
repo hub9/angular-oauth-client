@@ -1,5 +1,5 @@
 import { isPlatformServer, Location } from '@angular/common'
-import { HttpClient, HttpErrorResponse, HttpHeaders, HttpResponse } from '@angular/common/http'
+import { HttpClient, HttpErrorResponse, HttpHeaders } from '@angular/common/http'
 import { Inject, Injectable, PLATFORM_ID } from '@angular/core'
 import 'rxjs/add/observable/of'
 import 'rxjs/add/operator/catch'
@@ -238,8 +238,7 @@ export class AuthService {
     const body = this.packRequestData(data, headers)
     const requestUrl = Location.joinWithSlash(this.config.apiUrl, url)
 
-    return this.http.request(method, requestUrl, { headers, body })
-      .map((response: HttpResponse<T>) => (response.status === 204 ? null : response.body))
+    return this.http.request<T>(method, requestUrl, { headers, body })
       .catch((error: HttpErrorResponse): Observable<T> => {
         if (error.status === 401) {
           this.logout()
