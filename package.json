@@ -1,17 +1,18 @@
 {
   "name": "@hub9/angular-oauth-client",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "Angular authentication module for OAuth APIs",
   "main": "lib/index.js",
   "typings": "lib/index",
-  "repository": "https://github.com/hub9co/angular-oauth-client",
+  "repository": "https://github.com/hub9/angular-oauth-client",
   "keywords": [
     "angular",
     "oauth"
   ],
   "author": "hub9",
   "license": "MIT",
-  "homepage": "https://github.com/hub9co/angular-oauth-client",
+  "homepage": "https://github.com/hub9/angular-oauth-client",
+  "bugs": "https://github.com/hub9/angular-oauth-client/issues",
   "scripts": {
     "build": "ngc",
     "lint": "tslint --project .",
