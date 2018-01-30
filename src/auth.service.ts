@@ -46,6 +46,10 @@ export class AuthService {
       return
     }
 
+    // Bind authRequestDataMap to this class before to prevent context errors when using
+    // it as RxJS operator handler
+    this.authRequestDataMap = this.authRequestDataMap.bind(this)
+
     this.storageLoad()
     this.refreshCheck()
   }
@@ -114,9 +118,9 @@ export class AuthService {
     const expiresIn = authData.expiration - now
     const refreshTimeout = expiresIn - AuthService.refreshThreshold
 
-    this.authData$.delay(refreshTimeout).do(() => {
-      this.refresh().subscribe()
-    }).subscribe()
+    this.authData$.delay(refreshTimeout)
+      .do(() => this.refresh().subscribe())
+      .subscribe()
     return true
   }
 
