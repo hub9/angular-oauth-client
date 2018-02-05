@@ -172,8 +172,8 @@ export class AuthService {
       `client_id=${this.config.apiId}&client_secret=${this.config.apiSecret}`
 
     const headers = new HttpHeaders()
-    headers.set('Content-Type', 'application/x-www-form-urlencoded')
-    headers.set('Authorization', `Bearer ${authData.refresh_token}`)
+      .set('Content-Type', 'application/x-www-form-urlencoded')
+      .set('Authorization', `Bearer ${authData.refresh_token}`)
 
     return this.http.post<AuthDataResponse>(this.authUrl, data, { headers })
       .map(this.authRequestDataMap)
@@ -192,13 +192,14 @@ export class AuthService {
   }
 
   /** Pack structured request data to be used as request body */
-  private packRequestData(data: RequestBody, headers: HttpHeaders) {
+  private packRequestData(data: RequestBody, headers: HttpHeaders)
+  : [RequestBody|FormData|string, HttpHeaders] {
     if (!data) {
-      return undefined
+      return [undefined, headers]
     }
 
     if (isPlatformServer(this.platformId)) {
-      return data
+      return [data, headers]
     }
 
     let hasFile = false
@@ -218,12 +219,13 @@ export class AuthService {
       }
     }
 
-    if (!hasFile) {
-      headers.set('Content-Type', 'application/json')
-      return JSON.stringify(data)
-    }
-
-    return formData
+    return hasFile ? [
+      formData,
+      headers.set('Content-Type', 'multipart/form-data'),
+    ] : [
+      JSON.stringify(data),
+      headers.set('Content-Type', 'application/json'),
+    ]
   }
 
   /** Create an observable that makes HTTP requests */
@@ -234,15 +236,17 @@ export class AuthService {
     headers: HttpHeaders = new HttpHeaders(),
   ): Observable<T> {
     const authData = this.authData$.getValue()
+    let reqHeaders = headers
+    let reqBody
 
     if (authData.access_token) {
-      headers.set('Authorization', `Bearer ${authData.access_token}`)
+      reqHeaders = headers.set('Authorization', `Bearer ${authData.access_token}`)
     }
 
-    const body = this.packRequestData(data, headers)
+    [reqBody, reqHeaders] = this.packRequestData(data, reqHeaders)
     const requestUrl = Location.joinWithSlash(this.config.apiUrl, url)
 
-    return this.http.request<T>(method, requestUrl, { headers, body })
+    return this.http.request<T>(method, requestUrl, { headers: reqHeaders, body: reqBody })
       .catch((error: HttpErrorResponse): Observable<T> => {
         if (error.status === 401) {
           this.logout()
