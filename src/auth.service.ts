@@ -61,7 +61,6 @@ export class AuthService {
       const authDataStr = localStorage.getItem(AuthService.localStorageKey)
       if (authDataStr) {
         authData = JSON.parse(authDataStr)
-        return
       }
     } catch (ignored) {} // LocalStorage not available
 
