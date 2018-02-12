@@ -1,8 +1,9 @@
 # dependencies
 /node_modules/
 
-# sources
+# assets and sources
 /src/
+/assets/
 
 # IDEs and editors
 /.editorconfig
