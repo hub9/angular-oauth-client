@@ -26,7 +26,7 @@ export interface AuthData extends AuthDataResponse {
 @Injectable()
 export class AuthService {
   static localStorageKey = 'auth_data'
-  static refreshThreshold = 300
+  static refreshThreshold = 10 * 60 * 1000 // 10 minutes in ms
   static emptyAuthData: AuthData = {
     access_token: null,
     refresh_token: null,
