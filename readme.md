@@ -1,7 +1,7 @@
-<div style="text-align:center">
+<center>
 <img src="assets/logo.svg" alt="Logo"/>
 <h1>Angular OAuth Client</h1>
-</div>
+</center>
 
 Angular module for authenticate to OAuth API backends.
 
