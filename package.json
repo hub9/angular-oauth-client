@@ -1,6 +1,6 @@
 {
   "name": "@hub9/angular-oauth-client",
-  "version": "2.0.8",
+  "version": "2.0.9",
   "description": "Angular authentication module for OAuth APIs",
   "main": "lib/index.js",
   "typings": "lib/index",
