@@ -1,15 +1,18 @@
-<center>
-<img src="assets/logo.svg" alt="Logo"/>
-<h1>Angular OAuth Client</h1>
-</center>
+<h1 align="center">
+  <img src="assets/logo.svg" />
+  <br/>
+  Angular OAuth Client
+</h1>
 
-Angular module for authenticate to OAuth API backends.
+Angular module for OAuth API authentication and wrapper for Angular's HTTP Client.
+
 
 ## Install
 
 ```bash
 $ npm install --save @hub9/angular-oauth-client
 ```
+
 
 ## Configure
 
